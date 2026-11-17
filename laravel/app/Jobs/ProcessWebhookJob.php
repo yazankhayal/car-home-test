@@ -14,13 +14,26 @@ class ProcessWebhookJob implements ShouldQueue
 
     public function handle(): void
     {
-        $this->event->update(['status' => 'processing']);
+        $claimed = WebhookEvent::whereKey($this->event->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'processing']);
 
         // TODO: What happens if two jobs process the same event simultaneously?
-        // Simulate processing work
-        sleep(1);
+        if ($claimed === 0) {
+            return;
+        }
 
-        $this->event->update(['status' => 'completed']);
+        $this->event->refresh();
+
+        // Simulate processing work
+        try {
+            sleep(1);
+        } catch (\Throwable $e) {
+            WebhookEvent::whereKey($this->event->id)->update(['status' => 'pending']);
+            throw $e;
+        }
+
+        WebhookEvent::whereKey($this->event->id)->update(['status' => 'completed']);
     }
 
     public function failed(\Throwable $e): void

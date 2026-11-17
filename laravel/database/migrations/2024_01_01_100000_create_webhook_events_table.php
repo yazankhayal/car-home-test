@@ -20,6 +20,7 @@ return new class extends Migration
 
             // TODO: How should duplicate events be handled?
             // TODO: Should event_id be unique per provider?
+            $table->unique(['provider', 'event_id']);
         });
     }
 

@@ -19,13 +19,18 @@ class WebhookController extends Controller
 
         // TODO: How should duplicate events be handled?
         // TODO: What happens if two requests arrive simultaneously with the same event_id?
-        $event = WebhookEvent::create([
-            'event_id' => $request->input('event_id'),
-            'provider' => $provider,
-            'type'     => $request->input('type'),
-            'payload'  => $request->input('payload'),
-            'status'   => 'pending',
-        ]);
+        $event = WebhookEvent::createOrFirst(
+            ['provider' => $provider, 'event_id' => $request->input('event_id')],
+            [
+                'type'    => $request->input('type'),
+                'payload' => $request->input('payload'),
+                'status'  => 'pending',
+            ],
+        );
+
+        if (! $event->wasRecentlyCreated) {
+            return response()->json(['id' => $event->id, 'status' => $event->status], 200);
+        }
 
         ProcessWebhookJob::dispatch($event);
 
