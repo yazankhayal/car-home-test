@@ -18,7 +18,7 @@ This runs 3 queries, whatever the number of orders: orders, customers, then item
 
 ## Result
 
-Measured on the same seeded data (1,000 orders), using the median of 10 requests:
+Measured with curl on the same seeded data (1,000 orders):
 
 | | Queries | Response time |
 |---|---|---|
