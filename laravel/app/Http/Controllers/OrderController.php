@@ -10,30 +10,15 @@ class OrderController extends Controller
     public function index(): JsonResponse
     {
         // TODO: This endpoint becomes slow with many orders. Investigate query count.
-        $orders = Order::all();
+        $orders = Order::query()
+            ->select(['id', 'customer_id', 'status', 'total'])
+            ->with([
+                'customer:id,name,email',
+                'items:id,order_id,product_name,sku,quantity,unit_price',
+            ])
+            ->latest('id')
+            ->get();
 
-        $result = [];
-
-        foreach ($orders as $order) {
-            $result[] = [
-                'id'       => $order->id,
-                'status'   => $order->status,
-                'total'    => $order->total,
-                'customer' => [
-                    'id'    => $order->customer->id,
-                    'name'  => $order->customer->name,
-                    'email' => $order->customer->email,
-                ],
-                'items' => $order->items->map(fn ($item) => [
-                    'id'           => $item->id,
-                    'product_name' => $item->product_name,
-                    'sku'          => $item->sku,
-                    'quantity'     => $item->quantity,
-                    'unit_price'   => $item->unit_price,
-                ]),
-            ];
-        }
-
-        return response()->json($result);
+        return response()->json($orders);
     }
 }
