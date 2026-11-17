@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class OrderTest extends TestCase
@@ -53,5 +54,17 @@ class OrderTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonPath('0.customer.name', 'Jane Doe');
         $response->assertJsonPath('0.customer.email', 'jane@example.com');
+    }
+
+    public function test_orders_index_does_not_have_n_plus_one(): void
+    {
+        Order::factory()->count(20)->has(OrderItem::factory()->count(3), 'items')->create();
+
+        DB::enableQueryLog();
+        $this->getJson('/api/orders')->assertOk();
+        $queries = count(DB::getQueryLog());
+
+        // before: 1 + 2×20 = 41; after eager loading: 3
+        $this->assertLessThanOrEqual(3, $queries, "Ran {$queries} queries");
     }
 }
